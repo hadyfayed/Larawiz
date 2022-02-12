@@ -19,6 +19,7 @@ class SetTimestamp
     public function handle(ModelConstruction $construction, Closure $next)
     {
         if ($construction->model->timestamps->using) {
+            $construction->namespace->addUse('\Illuminate\Support\Carbon');
             $this->setTimestamps($construction->model->timestamps, $construction->class);
         } else {
             $construction->class->addProperty('timestamps', false)
@@ -57,13 +58,13 @@ class SetTimestamp
 
         if ($timestamps->usingCreatedAt()) {
             $class->addComment(
-                '@property-read \Illuminate\Support\Carbon $' . $timestamps->createdAtColumn
+                '@property-read Carbon $' . $timestamps->createdAtColumn
             );
         }
 
         if ($timestamps->usingUpdatedAt()) {
             $class->addComment(
-                '@property-read \Illuminate\Support\Carbon $' . $timestamps->updatedAtColumn
+                '@property-read Carbon $' . $timestamps->updatedAtColumn
             );
         }
     }

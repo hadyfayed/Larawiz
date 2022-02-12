@@ -30,8 +30,9 @@ class SetSoftDeletes
                     ->addComment('@var string');
             }
 
+            $construction->namespace->addUse('\Illuminate\Support\Carbon');
             $construction->class->addComment(
-                '@property-read null|\Illuminate\Support\Carbon $' . $construction->model->softDelete->column
+                '@property-read null|Carbon $' . $construction->model->softDelete->column
             );
         }
 

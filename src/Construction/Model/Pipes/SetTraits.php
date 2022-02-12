@@ -23,7 +23,18 @@ class SetTraits
                 $namespace = $trait->external ? $trait->namespace : $trait->fullNamespace();
 
                 Arr::first($construction->file->getNamespaces())->addUse($namespace);
-
+                if($namespace == 'Spatie\Sluggable\HasSlug'){
+                    $SpatieSluggableMethod = "return SlugOptions::create()". "\n";
+                    $SpatieSluggableMethod .= "\t"."->generateSlugsFrom('".Arr::first($construction->model->fillable)."')". "\n";
+                    $SpatieSluggableMethod .= "\t"."->saveSlugsTo('slug')". "\n";
+                    $SpatieSluggableMethod .= "\t"."->usingSeparator('_');". "\n";
+                    Arr::first($construction->file->getNamespaces())->addUse('Spatie\Sluggable\SlugOptions');
+                    $construction->class->addMethod('getSlugOptions')
+                        ->addBody($SpatieSluggableMethod)
+                        ->addComment(" ")
+                        ->addComment("@return SlugOptions")
+                        ->setReturnType('Spatie\Sluggable\SlugOptions');
+                }
                 $construction->class->addTrait($namespace);
             }
         }

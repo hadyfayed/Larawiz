@@ -27,19 +27,29 @@ class SetRelations
             foreach ($construction->model->relations as $relation) {
 
                 if ($relation instanceof MorphTo) {
+                    collect(json_decode($relation->models->map->fullNamespace()))->each(function ($item, $key) use($construction){
+                        $construction->namespace->addUse($item);
+                    });
+                    $construction->namespace->addUse('Illuminate\Database\Eloquent\Relations\MorphTo');
+
                     $this->setMorphToComment($construction->class, $relation);
                     $this->setMorphToRelation($construction->class, $relation);
                 } elseif($relation instanceof BelongsTo) {
                     $construction->namespace->addUse($relation->model->fullNamespace());
+                    $construction->namespace->addUse('Illuminate\Database\Eloquent\Relations\BelongsTo');
 
                     $this->setBelongsToComment($construction->class, $relation);
                     $this->setBelongsToRelation($construction->class, $relation);
                 }
                 else {
                     $construction->namespace->addUse($relation->model->fullNamespace());
+                    $construction->namespace->addUse($relation->class());
+                    $construction->namespace->addUse('Illuminate\Database\Eloquent\Collection');
                     $this->setClassComment($construction->class, $relation);
                     $this->setRelation($construction->namespace, $construction->class, $relation)
-                        ->addComment("@return \\{$relation->class()}|{$relation->model->fullRootNamespace()}");
+                        ->setReturnType($relation->class())
+                        ->addComment(str($relation->type)->headline().' '.str($relation->model->getRelativeNamespaceWithoutModel())->plural())
+                        ->addComment("@return ".str($relation->class())->afterLast('\\'));
                 }
             }
 
@@ -63,7 +73,7 @@ class SetRelations
             $start .= 'null|';
         }
 
-        $start .= $relation->models->map->fullRootNamespace()->implode('|');
+        $start .= $relation->models->map->getRelativeNamespaceWithoutModel()->implode('|');
 
         $class->addComment("{$start} \${$relation->name}");
     }
@@ -76,14 +86,12 @@ class SetRelations
      */
     protected function setMorphToRelation(ClassType $class, MorphTo $relation)
     {
-        $comment = '@return \Illuminate\Database\Eloquent\Relations\MorphTo|';
-
-        $comment .= $relation->models->map->fullRootNamespace()->implode('|');
-
         $class->addMethod($relation->name)
             ->setPublic()
             ->setBody('return $this->' . Method::methodsToString($relation->relationMethods()) . ';')
-            ->addComment($comment);
+            ->setReturnType('\Illuminate\Database\Eloquent\Relations\MorphTo')
+            ->addComment("Morph To ". collect(json_decode($relation->models->map->getRelativeNamespaceWithoutModel()))->implode(' & '))
+            ->addComment("@return MorphTo");
     }
 
     /**
@@ -100,7 +108,7 @@ class SetRelations
             $start .= 'null|';
         }
 
-        $start .= $relation->model->fullRootNamespace();
+        $start .= $relation->model->getRelativeNamespaceWithoutModel();
 
         $class->addComment("{$start} \${$relation->name}");
     }
@@ -113,12 +121,12 @@ class SetRelations
      */
     protected function setBelongsToRelation(ClassType $class, BelongsTo $relation)
     {
-        $comment = "@return \Illuminate\Database\Eloquent\Relations\BelongsTo|{$relation->model->fullRootNamespace()}";
-
         $class->addMethod($relation->name)
             ->setPublic()
             ->setBody('return $this->' . Method::methodsToString($relation->relationMethods()) . ';')
-            ->addComment($comment);
+            ->setReturnType('Illuminate\Database\Eloquent\Relations\BelongsTo')
+            ->addComment("Belongs To {$relation->model->getRelativeNamespaceWithoutModel()}")
+            ->addComment("@return BelongsTo");
     }
 
     /**
@@ -136,7 +144,7 @@ class SetRelations
         }
 
         if ($relation->returnsCollection()) {
-            $start .= "\Illuminate\Database\Eloquent\Collection|{$relation->model->fullRootNamespaceArray()}";
+            $start .= "Collection|{$relation->model->getRelativeNamespaceWithoutModel()}";
         }
         else {
             $start .= $relation->model->fullRootNamespace();

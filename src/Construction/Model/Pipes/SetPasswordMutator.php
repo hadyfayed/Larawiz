@@ -18,16 +18,18 @@ class SetPasswordMutator
     public function handle(ModelConstruction $construction, Closure $next)
     {
         if ($construction->model->modelType === User::class && $construction->model->columns->has('password')) {
+            $construction->namespace->addUse('\Illuminate\Contracts\Container\BindingResolutionException');
             $construction->class
                 ->addMethod('setPasswordAttribute')
+                ->setReturnType('void')
                 ->setPublic()
                 ->addComment('Automatically encrypts the password.')
                 ->addComment('')
                 ->addComment('@param  string  $password')
                 ->addComment('@return void')
-                ->addComment('@throws \Illuminate\Contracts\Container\BindingResolutionException')
+                ->addComment('@throws BindingResolutionException')
                 ->addBody("\$this->attributes['password'] = app('hash')->make(\$password);")
-                ->addParameter('password');
+                ->addParameter('password')->setType('string');
         }
 
         return $next($construction);

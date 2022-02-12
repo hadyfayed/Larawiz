@@ -37,6 +37,7 @@ class CreateModelInstance
             $construction->namespace->addUse($construction->model->modelType);
         }
 
+        $construction->namespace->addUse('\Illuminate\Database\Eloquent\Builder');
         $this->setBuilderPhpDocs($construction->class);
 
         return $next($construction);
@@ -49,12 +50,12 @@ class CreateModelInstance
      */
     protected function setBuilderPhpDocs(ClassType $class)
     {
-        $class->addComment('@mixin \Illuminate\Database\Eloquent\Builder');
+        $class->addComment('@mixin Builder');
 
         $class->addComment('');
 
-        $class->addComment('@method static \Illuminate\Database\Eloquent\Builder|static query()');
-        $class->addComment('@method \Illuminate\Database\Eloquent\Builder|static newQuery()');
+        $class->addComment('@method static Builder|static query()');
+        $class->addComment('@method Builder|static newQuery()');
 
         $methods = [
             'make(array $attributes = [])',
